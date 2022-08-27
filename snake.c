@@ -13,6 +13,13 @@
 struct termios saved_attributes;
 
 void update_field(char field[ROWS][COLS]);
+void reset_terminal(void);
+void place_food(char field[ROWS][COLS]);
+void move(char field[ROWS][COLS], int dir_y, int dir_x); // dir_y(direction_y) and dir_x(direction_y)
+int game(void);
+int get_snake_len(char field[ROWS][COLS]);
+void get_head_pos(char field[ROWS][COLS], int *, int *);
+
 
 // Apply the saved terminal state
 void reset_terminal(void) {
@@ -21,6 +28,10 @@ void reset_terminal(void) {
 
 // Displays the current state of the field
 void update_field(char field[ROWS][COLS]) {
+
+    printf("\033[%dA", ROWS);
+    printf("\033[%dD", COLS);
+    
 
     for (int i = 0; i < ROWS; i++) {
 	for (int j = 0; j < COLS; j++) {
@@ -34,6 +45,83 @@ void update_field(char field[ROWS][COLS]) {
     
 }
 
+// Place the food at a random position
+void place_food(char field[ROWS][COLS]) {
+
+    field[rand() % ROWS][rand() & COLS] = 'o';
+}
+
+// Move the snake
+// dir_y = direction up/down, dir_x = direction right, left
+void move(char field[ROWS][COLS], int dir_y, int dir_x) {
+
+    // pos_x = row
+    // pos_y = col
+    int pos_x, pos_y;
+    // Place the current pos of head in pos_x and pos_y
+    get_head_pos(field, &pos_x, &pos_y);
+    
+    bool right = false;
+    bool left = false;
+    bool up = false;
+    bool down = false;
+
+    if (dir_x == 1)
+	right = true;
+    else if (dir_x == -1)
+	left = true;
+    else if (dir_y == 1)
+	down = true;
+    else if (dir_y == -1)
+	up = true;
+    
+   
+    if (right) {
+	field[pos_x][pos_y + dir_x] = '0';
+	field[pos_x][pos_y] = ' ';
+    }
+    else if (left) {
+	field[pos_x][pos_y + dir_x] = '0';
+	field[pos_x][pos_y] = ' ';
+    }
+    else if (up) {
+	field[pos_x + dir_y][pos_y] = '0';
+	field[pos_x][pos_y] = ' ';
+    }
+    else if (down) {
+	field[pos_x + dir_y][pos_y] = '0';
+	field[pos_x][pos_y] = ' ';
+    }
+    
+}
+
+// Get the current length of the snake
+int get_snake_len(char field[ROWS][COLS]) {
+
+    int len = 0;
+
+    for (int i = 0; i < ROWS; i++) {
+	for (int j = 0; j < COLS; j++) {
+	    if (field[i][j] != ' ')
+		len++;
+	}
+    }
+
+    return len;
+}
+
+// Get the position of the snake's head
+void get_head_pos(char field[ROWS][COLS], int *i, int *j) {
+
+    for (*i = 0; *i < ROWS; (*i)++) {
+	for (*j = 0; *j < COLS; (*j)++) {
+	    if (field[*i][*j] == '0')
+		return;
+	}
+    }
+}
+
+// Where the game happens
 int game() {
 
     char field[ROWS][COLS];
@@ -64,8 +152,13 @@ int game() {
 	}
     }
 
-    // Center snake in the beginning
+    // Position snake in starting pos
     field[ROWS/2][COLS/2] = snake_head;
+
+    srand((unsigned) time(NULL));
+
+    // Position food in starting pos
+    place_food(field);
 
     update_field(field);
 
@@ -77,6 +170,22 @@ int game() {
 
 	case 'x':
 	    return 1;
+	case 'd':
+	    move(field, 0, 1);
+	    update_field(field);
+	    break;
+	case 'a':
+	    move(field, 0, -1);
+	    update_field(field);
+	    break;
+	case 'w':
+	    move(field, -1, 0);
+	    update_field(field);
+	    break;
+	case 's':
+	    move(field, 1, 0);
+	    update_field(field);
+	    break;
 	}
 	
     }
