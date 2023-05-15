@@ -19,6 +19,8 @@ int game(void);
 int snake_x[ROWS * COLS] = {0};
 int snake_y[ROWS * COLS] = {0};
 int snake_len = 1;
+int food_x = 0;
+int food_y = 0;
 
 
 // Apply the saved terminal state
@@ -34,7 +36,16 @@ void update_field(char field[ROWS][COLS]) {
 
     // Insert the snake into the 2D array field
     for (int i = 0; i <= snake_len; i++) {
-        field[snake_y[snake_len]][snake_x[snake_len]] = '*';
+	if (snake_x[snake_len] < 0 || snake_x[snake_len] > 9) {
+	    exit(1);
+	}
+	else if (snake_y[snake_len] < 0 || snake_y[snake_len] > 9) {
+	    exit(1);
+	}
+	
+	else {
+            field[snake_y[snake_len]][snake_x[snake_len]] = '*';
+	}
     }
     
     // Remove the old tail
@@ -43,6 +54,10 @@ void update_field(char field[ROWS][COLS]) {
     // Draw whatever is in the field 2D array
     for (int i = 0; i < ROWS; i++) {
 	for (int j = 0; j < COLS; j++) {
+	    if (field[i][j] == 'o') {
+	        food_y = i;
+		food_x = j;
+	    }
 	    printf("%c ", field[i][j]);
 	}
 	printf("\n");
@@ -53,11 +68,29 @@ void update_field(char field[ROWS][COLS]) {
 // Place the food at a random position
 void place_food(char field[ROWS][COLS]) {
 
-    field[rand() % ROWS - 1][rand() % COLS - 1] = 'o';
+        
+    // Loop until the food gets placed anywhere EXCEPT inside the snake
+    while (1) {
+
+	int randomY_pos = rand() % ROWS;
+    	int randomX_pos = rand() % COLS;
+
+	if (field[randomY_pos][randomX_pos] == '*') {
+    	    continue;		
+	}
+
+    	field[randomY_pos][randomX_pos] = 'o';
+	// Debugging
+	//printf("Y: %d X: %d", randomY_pos, randomX_pos);
+	break;
+    }
+
 }
 
+// move snake
 void move(char field[ROWS][COLS], int dir_y, int dir_x) {
 
+    // If we are moving righ
     if (dir_x == 1) {
         for (int i = 0; i < snake_len; i++) {
 	    snake_x[i] = snake_x[i+1];
@@ -73,11 +106,17 @@ void move(char field[ROWS][COLS], int dir_y, int dir_x) {
 	    // Place a new food after eating one
 	    place_food(field);
 	}
+	// If we are going into ourselves, just exit/lose
+	else if (field[snake_y[snake_len]][snake_x[snake_len] + 1] == '*') {
+	    exit(1);
+	}
 	else {
 	    snake_x[snake_len]++;
 	}
     }
 
+
+    // If we are moving left
     if (dir_x == -1) {
 	 for (int i = 0; i < snake_len; i++) {
 	    snake_x[i] = snake_x[i+1];
@@ -93,11 +132,17 @@ void move(char field[ROWS][COLS], int dir_y, int dir_x) {
 	    place_food(field);
 
 	}
+	// If we are going into ourselves, just exit/lose
+	else if (field[snake_y[snake_len]][snake_x[snake_len] - 1] == '*') {
+	    exit(1);
+	}
+
 	else {
 	    snake_x[snake_len]--;
 	}
     }
 
+    // If we are moving up
     if (dir_y == -1) {
         for (int i = 0; i < snake_len; i++) {
 	    snake_x[i] = snake_x[i+1];
@@ -113,11 +158,17 @@ void move(char field[ROWS][COLS], int dir_y, int dir_x) {
 	    place_food(field);
 
 	}
+	// If we are going into ourselves, just exit/lose
+	else if (field[snake_y[snake_len] - 1][snake_x[snake_len]] == '*') {
+	    exit(1);
+	}
+
 	else {
 	    snake_y[snake_len]--;
 	}
     }
 
+    // If we are moving down
     if (dir_y == 1) {
 	for (int i = 0; i < snake_len; i++) {
 	    snake_x[i] = snake_x[i+1];
@@ -133,6 +184,11 @@ void move(char field[ROWS][COLS], int dir_y, int dir_x) {
 	    place_food(field);
 
 	}
+	// If we are going into ourselves, just exit/lose
+	else if (field[snake_y[snake_len] + 1][snake_x[snake_len]] == '*') {
+	    exit(1);
+	}
+
 	else {
 	    snake_y[snake_len]++;
 	}
@@ -209,7 +265,9 @@ int game() {
 	    break;
 	}
 
-	printf("head: X: %d - Y: %d", snake_x[snake_len], snake_y[snake_len]);
+	// Debugging print
+	//printf("head: X: %d - Y: %d", snake_x[snake_len], snake_y[snake_len]);
+	//printf("food x: %d - food y: %d", food_x, food_y);
 	
     }
 }
@@ -234,6 +292,8 @@ int main(void) {
 	scanf("%d", &answer);
 
 	if (answer == 1) {
+	    // Clear the screen and go!
+	    printf("\033[2J");
 	    if(game() == 1)
 		    // Break here instead of return?
 		return 0;
